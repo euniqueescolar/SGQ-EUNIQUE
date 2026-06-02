@@ -1466,7 +1466,7 @@ function parseSKU(sku){
     lote_num: makeLote(ec,fc,prod,tt,'01','05','26'),
     categoria: getCat(pref,prod)
   };
-}
+}}
 
 const DATA=RAW.map(parseSKU).filter(Boolean);
 let sKey='sku', sDir=1;
