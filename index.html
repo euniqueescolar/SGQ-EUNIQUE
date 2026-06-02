@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Lotes — Start Anglo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #e8c84a;
+    --accent2: #4ab4e8;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+    --ok: #4ae89a;
+    --warn: #e8824a;
+    --err: #e84a4a;
+    --purple: #b08ef0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 22px 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .logo-badge {
+    background: var(--accent);
+    color: #111;
+    font-family: 'DM Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 5px 11px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 17px; font-weight: 500; }
+  header p  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 0 40px;
+    overflow-x: auto;
+  }
+  .tab {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 14px 20px;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 36px 40px 0; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 30px 32px;
+    margin-bottom: 28px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 2.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 11px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(232,200,74,.1);
+  }
+
+  .big-input {
+    font-size: 22px !important;
+    letter-spacing: 3px;
+    padding: 14px 18px !important;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #111;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 13px 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn.sec {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  .lote-display {
+    margin-top: 24px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    display: none;
+  }
+
+  .lote-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    color: var(--accent);
+    margin-bottom: 16px;
+    word-break: break-all;
+  }
+
+  .segs { display: flex; flex-wrap: wrap; margin-bottom: 20px; }
+
+  .seg {
+    padding: 9px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .seg .sl {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 3px;
+    font-weight: 400;
+    opacity: .75;
+  }
+
+  .s-escola { background: rgba(176,142,240,.18); color: var(--purple);  border-radius: 6px 0 0 6px; }
+  .s-forn   { background: rgba(232,200,74,.15);  color: var(--accent);  border-radius: 6px 0 0 6px; }
+  .s-prod   { background: rgba(74,180,232,.14);  color: var(--accent2); }
+  .s-tam    { background: rgba(74,232,154,.14);  color: var(--ok); }
+  .s-cor    { background: rgba(176,74,232,.14);  color: #d07ef0; }
+  .s-mes    { background: rgba(232,130,74,.14);  color: var(--warn); }
+  .s-ano    { background: rgba(232,74,74,.14);   color: var(--err); border-radius: 0 6px 6px 0; }
+
+  .dtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+
+  .dtile {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .dtile .dl { font-size: 9px; font-family: 'DM Mono', monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  .dtile .dv { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .dtile .ds { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .c-escola { color: var(--purple); }
+  .c-forn   { color: var(--accent); }
+  .c-prod   { color: var(--accent2); }
+  .c-tam    { color: var(--ok); }
+  .c-cor    { color: #d07ef0; }
+  .c-mes    { color: var(--warn); }
+  .c-ano    { color: var(--err); }
+
+  .error-msg {
+    background: rgba(232,74,74,.1);
+    border: 1px solid rgba(232,74,74,.3);
+    color: var(--err);
+    border-radius: 8px;
+    padding: 13px 18px;
+    font-size: 13px;
+    margin-top: 16px;
+    display: none;
+  }
+
+  .copy-btn {
+    background: rgba(74,232,154,.1);
+    color: var(--ok);
+    border: 1px solid rgba(74,232,154,.25);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 5px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .copy-btn:hover { background: rgba(74,232,154,.2); }
+
+  /* TABLE */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; flex-wrap: wrap; }
+  .toolbar input { font-size: 13px; letter-spacing: 0; max-width: 230px; }
+  .count-badge { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-left: auto; }
+  .tw { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { color: var(--text); }
+  tbody tr { border-bottom: 1px solid rgba(46,46,56,.5); transition: background .1s; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 11px 12px; vertical-align: middle; }
+
+  .sku-code { font-family: 'DM Mono', monospace; color: var(--accent); letter-spacing: 1px; }
+  .lote-num { font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 1.5px; }
+  .tag { display: inline-block; font-size: 11px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .tag-ST  { background: rgba(232,200,74,.15); color: var(--accent); }
+  .tag-LIC { background: rgba(74,180,232,.15); color: var(--accent2); }
+  .tam-pill { display: inline-block; background: rgba(74,232,154,.1); color: var(--ok); font-family: 'DM Mono', monospace; font-size: 12px; padding: 2px 10px; border-radius: 20px; }
+
+  /* LEGEND */
+  .lgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 20px; }
+  .lblock h4 { font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .lrow { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; font-size: 13px; }
+  .lkey { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 600; min-width: 48px; text-align: center; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+  .ldesc { color: var(--text); line-height: 1.4; }
+  .lnote { color: var(--muted); font-size: 11px; margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  .struct-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    line-height: 2.6;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .main { padding: 20px 16px 0; }
+    header { padding: 16px 20px; }
+    .lgrid { grid-template-columns: 1fr; }
+    .lote-number { font-size: 22px; letter-spacing: 2px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">START ANGLO</div>
+  <div>
+    <h1>Procedimento de Controle de Lotes</h1>
+    <p>Gerador · Decodificador · Inventário · Legenda</p>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('gerador')">Gerador de Lote</div>
+  <div class="tab" onclick="showTab('decodificador')">Decodificador</div>
+  <div class="tab" onclick="showTab('inventario')">Inventário</div>
+  <div class="tab" onclick="showTab('legenda')">Legenda</div>
+  <div class="tab" onclick="showTab('barcode')">Código de Barras</div>
+  <div class="tab" onclick="showTab('historico')">Histórico de Lotes</div>
+</div>
+
+<!-- =================== GERADOR =================== -->
+<div id="tab-gerador" class="panel active">
+<div class="main">
+
+  <div class="card">
+    <div class="section-label">Gerar Número de Lote</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Escola</label>
+        <select id="g-escola" onchange="gerarLote()">
+          <option value="01">01 — Start Anglo</option>
+          <option value="02">02 — Liceu Pasteur</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fornecedor</label>
+        <select id="g-forn" onchange="gerarLote()">
+          <option value="01">01 — JFR Confecções</option>
+          <option value="02">02 — Cowcal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Produto</label>
+        <select id="g-prod" onchange="gerarLote()">
+          <optgroup label="—— Start Anglo (ST) ——">
+            <option value="100">ST100 — Camiseta Uniforme Start Anglo Algodão Premium</option>
+            <option value="101">ST101 — Camiseta Uniforme Start Anglo Babylook</option>
+            <option value="102">ST102 — Bermuda Moletinho - Start</option>
+            <option value="103">ST103 — Bermuda Uniforme Start Anglo Tactel - SEM LOGO</option>
+            <option value="104">ST104 — Shorts Saia Uniforme Start Anglo - SEM LOGO</option>
+            <option value="105">ST105 — Bermuda Uniforme Start Anglo Ciclista - SEM LOGO</option>
+            <option value="106">ST106 — Regata Uniforme Start Anglo Algodão</option>
+            <option value="107">ST107 — Vestido Uniforme Start Anglo Azul</option>
+            <option value="108">ST108 — Shorts Interno para Vestido Uniforme Start Anglo</option>
+            <option value="109">ST109 — Calça Uniforme Start Anglo Moletinho - SEM LOGO</option>
+            <option value="110">ST110 — Shorts Saia Uniforme Start Anglo Infantil</option>
+            <option value="111">ST111 — Bermuda Uniforme Start Anglo Tactel</option>
+            <option value="112">ST112 — Casaco Uniforme Start Anglo Moletinho sem Punho</option>
+            <option value="113">ST113 — Vestido Uniforme Start Anglo Tricolor</option>
+            <option value="114" selected>ST114 — Bermuda Uniforme Start Anglo Ciclista Azul</option>
+            <option value="115">ST115 — Shorts Saia Uniforme Start Anglo Adulto</option>
+            <option value="116">ST116 — Calça Uniforme Start Anglo Moletinho</option>
+            <option value="117">ST117 — Calça Uniforme Start Anglo Bailarina</option>
+            <option value="118">ST118 — CAMISETA BRANCA - CAMPANHA 26</option>
+            <option value="119">ST119 — Bermuda Uniforme Start Anglo Moletinho</option>
+            <option value="120">ST120 — Casaco Uniforme Start Anglo Moletinho com Punho</option>
+            <option value="121">ST121 — Calça Uniforme Start Anglo Legging - SEM LOGO</option>
+            <option value="122">ST122 — Calça Uniforme Start Anglo Bailarina - SEM LOGO</option>
+            <option value="123">ST123 — Calça Uniforme Start Anglo Legging</option>
+            <option value="124">ST124 — Bermuda Uniforme Start Anglo Ciclista Mescla</option>
+            <option value="300">ST300 — Camiseta Uniforme Start Anglo Dry Fit</option>
+            <option value="400">ST400 — Camiseta Uniforme Start Anglo Algodão Conforto</option>
+            <option value="409">ST409 — Calça Uniforme Start Anglo Moletom</option>
+            <option value="410">ST410 — Bermuda Uniforme Start Anglo Ciclista Mescla</option>
+            <option value="412">ST412 — Casaco Uniforme Start Anglo Moletom</option>
+            <option value="500">ST500 — Camiseta Uniforme Start Anglo Manga Longa</option>
+            <option value="501">ST501 — Camiseta Uniforme Start Anglo Raglan</option>
+            <option value="512">ST512 — Blusa Uniforme Start Anglo Moletom Canguru</option>
+          </optgroup>
+          <optgroup label="—— Liceu Pasteur (LIC) ——">
+            <option value="110">LIC110 — Camiseta Uniforme Liceu Pasteur Start Anglo Algodão Premium</option>
+            <option value="111">LIC111 — Camiseta Uniforme Liceu Pasteur Start Anglo Algodão Conforto</option>
+            <option value="112">LIC112 — Regata Uniforme Liceu Pasteur Start Anglo Algodão</option>
+            <option value="113">LIC113 — Camiseta Uniforme Liceu Pasteur Start Anglo Dry Fit</option>
+            <option value="114">LIC114 — Camiseta Uniforme Liceu Pasteur Start Anglo Raglan</option>
+            <option value="200">LIC200 — Shorts Saia Uniforme Liceu Pasteur Start Anglo Infantil</option>
+            <option value="201">LIC201 — Bermuda Uniforme Liceu Pasteur Start Anglo Moletinho</option>
+            <option value="202">LIC202 — Bermuda Uniforme Liceu Pasteur Start Anglo Ciclista</option>
+            <option value="300">LIC300 — Vestido Uniforme Liceu Pasteur Start Anglo</option>
+            <option value="301">LIC301 — Calça Uniforme Liceu Pasteur Start Anglo Moletinho</option>
+            <option value="302">LIC302 — Calça Uniforme Liceu Pasteur Start Anglo Bailarina</option>
+            <option value="303">LIC303 — Casaco Uniforme Liceu Pasteur Start Anglo Moletinho</option>
+            <option value="410">LIC410 — Calça Uniforme Liceu Pasteur Start Anglo Moletom</option>
+            <option value="513">LIC513 — Blusa Uniforme Liceu Pasteur Start Anglo Moletom Canguru</option>
+            <option value="600">LIC600 — Bermuda Uniforme Liceu Pasteur Start Anglo Tactel</option>
+            <option value="602">LIC602 — Casaco Uniforme Liceu Pasteur Start Anglo Moletinho com Punho</option>
+            <option value="603">LIC603 — Shorts Saia Uniforme Liceu Pasteur Start Anglo Adulto</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tamanho</label>
+        <select id="g-tam" onchange="gerarLote()">
+          <optgroup label="Infantil">
+            <option value="01">01</option>
+            <option value="02">02</option>
+            <option value="04">04</option>
+            <option value="06">06</option>
+            <option value="08" selected>08</option>
+            <option value="10">10</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+          </optgroup>
+          <optgroup label="Adulto">
+            <option value="16">16 — PP</option>
+            <option value="18">18 — P</option>
+            <option value="20">20 — M</option>
+            <option value="22">22 — G</option>
+            <option value="24">24 — GG</option>
+            <option value="26">26 — XGG</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cor</label>
+        <select id="g-cor" onchange="gerarLote()">
+          <option value="01">01 — Azul</option>
+          <option value="02">02 — Mescla</option>
+          <option value="03">03 — Chumbo</option>
+          <option value="04">04 — Branca</option>
+          <option value="05">05 — Tricolor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Mês</label>
+        <select id="g-mes" onchange="gerarLote()">
+          <option value="01">01 — Janeiro</option>
+          <option value="02">02 — Fevereiro</option>
+          <option value="03">03 — Março</option>
+          <option value="04">04 — Abril</option>
+          <option value="05" selected>05 — Maio</option>
+          <option value="06">06 — Junho</option>
+          <option value="07">07 — Julho</option>
+          <option value="08">08 — Agosto</option>
+          <option value="09">09 — Setembro</option>
+          <option value="10">10 — Outubro</option>
+          <option value="11">11 — Novembro</option>
+          <option value="12">12 — Dezembro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ano (2 dígitos)</label>
+        <input type="number" id="g-ano" value="26" min="20" max="99" oninput="gerarLote()">
+      </div>
+    </div>
+
+    <div class="lote-display" id="loteDisplay">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px">
+        <div>
+          <div style="font-size:10px;font-family:'DM Mono',monospace;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Número do Lote</div>
+          <div class="lote-number" id="loteNumero"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <button class="copy-btn" style="font-size:13px;padding:8px 20px" onclick="copiarLote()">Copiar</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Qtd. etiquetas:</label>
+            <input type="number" id="g-qty" value="1" min="1" max="9999"
+              style="width:72px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:6px 8px;border-radius:6px;text-align:center;outline:none">
+          </div>
+          <button class="btn sec" style="font-size:13px;padding:8px 20px;white-space:nowrap" onclick="imprimirDoGerador()">🖨 Imprimir etiqueta</button>
+        </div>
+      </div>
+      <div id="loteDupAlert" style="display:none;background:rgba(232,130,74,.15);border:1px solid rgba(232,130,74,.4);color:var(--warn);border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:12px"></div>
+      <div id="loteSalvoMsg" style="display:none;background:rgba(74,232,154,.12);border:1px solid rgba(74,232,154,.3);color:var(--ok);border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:12px">✓ Lote registrado no histórico com sucesso.</div>
+      <div class="segs" id="loteSegs"></div>
+      <div class="dtiles" id="loteDtiles"></div>
+      <div style="margin-top:16px">
+        <button class="btn" onclick="registrarLoteAtual()" style="font-size:13px;padding:10px 24px">✚ Registrar Lote no Histórico</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Lote Completo — todos os tamanhos</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Gera os 7 números de lote mantendo escola, fornecedor, produto e mês/ano selecionados.</p>
+    <button class="btn" onclick="gerarCompleto()">Gerar Lote Completo</button>
+    <div id="completoWrap" style="display:none;margin-top:24px">
+      <div class="tw">
+        <table>
+          <thead>
+            <tr>
+              <th>Número do Lote</th>
+              <th>Escola</th>
+              <th>Fornecedor</th>
+              <th>Produto</th>
+              <th>Tamanho</th>
+              <th>Cor</th>
+              <th>Mês/Ano</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="completoBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- =================== DECODIFICADOR =================== -->
+<div id="tab-decodificador" class="panel">
+<div class="main">
+
+  <div class="card">
+    <div class="section-label">Decodificar Número de Lote Numérico (13 dígitos)</div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <label style="display:block;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Número do Lote</label>
+        <input type="text" id="decInput" class="big-input" placeholder="010111108010526" maxlength="15" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <button class="btn" onclick="decodificarLote()">Decodificar</button>
+    </div>
+    <div class="error-msg" id="decErr"></div>
+    <div id="decResult" style="display:none;margin-top:24px">
+      <div class="segs" id="decSegs"></div>
+      <div class="dtiles" id="decTiles"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Decodificar SKU (formato anterior)</div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <label style="display:block;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Código SKU</label>
+        <input type="text" id="skuInput" class="big-input" placeholder="ST111-08" maxlength="20" style="text-transform:uppercase">
+      </div>
+      <button class="btn sec" onclick="decodificarSKU()">Decodificar SKU</button>
+    </div>
+    <div class="error-msg" id="skuErr"></div>
+    <div class="dtiles" id="skuResult" style="display:none;margin-top:24px"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- =================== INVENTÁRIO =================== -->
+<div id="tab-inventario" class="panel">
+<div class="main">
+  <div class="card">
+    <div class="section-label">Inventário de SKUs — Relatório 15/05/2026</div>
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Buscar SKU, produto ou nº lote..." oninput="filtrar()">
+      <select id="fornFilter" onchange="filtrar()">
+        <option value="">Todos os fornecedores</option>
+        <option value="ST">ST — Start Anglo</option>
+        <option value="LIC">LIC — Liceu Pasteur</option>
+      </select>
+      <select id="catFilter" onchange="filtrar()">
+        <option value="">Todas as categorias</option>
+        <option value="Camiseta">Camiseta</option>
+        <option value="Bermuda">Bermuda</option>
+        <option value="Calça">Calça</option>
+        <option value="Shorts">Shorts</option>
+        <option value="Blusa">Blusa</option>
+        <option value="Casaco">Casaco</option>
+        <option value="Regata">Regata</option>
+        <option value="Vestido">Vestido</option>
+        <option value="Bermuda">Bermuda</option>
+        <option value="Shorts">Shorts</option>
+      </select>
+      <span class="count-badge" id="countBadge"></span>
+    </div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sort('sku')">SKU</th>
+            <th onclick="sort('escola_nome')">Escola</th>
+            <th onclick="sort('forn_cad')">Fornecedor</th>
+            <th onclick="sort('produto_nome')">Produto</th>
+            <th onclick="sort('tam_letra')">Tamanho</th>
+            <th onclick="sort('grade')">Grade</th>
+            <th onclick="sort('cor_nome')">Cor</th>
+            <th onclick="sort('lote_num')">Nº Lote</th>
+            <th style="width:120px">Código de Barras</th>
+            <th style="width:80px">Qtd.</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- =================== LEGENDA =================== -->
+<div id="tab-legenda" class="panel">
+<div class="main">
+  <div class="card">
+    <div class="section-label">Estrutura do Número de Lote (13 dígitos)</div>
+    <div class="struct-box">
+      <span class="c-forn">FF</span><span class="c-escola">EE</span><span class="c-prod">PPP</span><span class="c-tam">TT</span><span class="c-cor">CC</span><span class="c-mes">MM</span><span class="c-ano">AA</span>
+      <br>
+      <span style="font-size:10px;opacity:.7">
+        <span class="c-forn">Fornecedor(2)</span>&nbsp;
+        <span class="c-escola">Escola(2)</span>&nbsp;
+        <span class="c-prod">Produto(3)</span>&nbsp;
+        <span class="c-tam">Tamanho(2)</span>&nbsp;
+        <span class="c-cor">Cor(2)</span>&nbsp;
+        <span class="c-mes">Mês(2)</span>&nbsp;
+        <span class="c-ano">Ano(2)</span>
+      </span>
+      <br><br>
+      <span style="color:var(--muted);font-size:12px">Exemplo — JFR · Start · Canguru · G · Azul · Maio/2026 →&nbsp;</span><span class="c-forn">01</span><span class="c-escola">01</span><span class="c-prod">111</span><span class="c-tam">08</span><span class="c-cor">01</span><span class="c-mes">05</span><span class="c-ano">26</span><span style="color:var(--muted);font-size:12px">&nbsp;(15 dígitos)</span>
+    </div>
+
+    <div class="lgrid">
+      <div class="lblock">
+        <h4>Fornecedor — FF</h4>
+        <div class="lrow"><span class="lkey" style="background:rgba(232,200,74,.15);color:var(--accent)">01</span><div><div class="ldesc">JFR Confecções</div><div class="lnote">Cadastro: JFR</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(232,200,74,.15);color:var(--accent)">02</span><div><div class="ldesc">Cowcal</div><div class="lnote">COWCAL PRODUCOES DE PRESENTES</div></div></div>
+      </div>
+
+      <div class="lblock">
+        <h4>Escola — EE</h4>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,142,240,.15);color:var(--purple)">01</span><div><div class="ldesc">Start Anglo</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,142,240,.15);color:var(--purple)">02</span><div><div class="ldesc">Liceu Pasteur</div></div></div>
+      </div>
+
+      <div class="lblock">
+        <h4>Produto — PPP</h4>
+        <div class="lrow"><span class="lkey" style="background:rgba(74,180,232,.12);color:var(--accent2)">1XX</span><div><div class="ldesc">Camisetas · Blusas · Casacos · Regatas</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(74,180,232,.12);color:var(--accent2)">3XX</span><div><div class="ldesc">Shorts e peças internas</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(74,180,232,.12);color:var(--accent2)">4XX</span><div><div class="ldesc">Calças · Vestidos</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(74,180,232,.12);color:var(--accent2)">5XX</span><div><div class="ldesc">Bermudas</div></div></div>
+      </div>
+
+      <div class="lblock">
+        <h4>Cor — CC</h4>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,74,232,.12);color:#d07ef0">01</span><div><div class="ldesc">Azul</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,74,232,.12);color:#d07ef0">02</span><div><div class="ldesc">Mescla</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,74,232,.12);color:#d07ef0">03</span><div><div class="ldesc">Chumbo</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,74,232,.12);color:#d07ef0">04</span><div><div class="ldesc">Branca</div></div></div>
+        <div class="lrow"><span class="lkey" style="background:rgba(176,74,232,.12);color:#d07ef0">05</span><div><div class="ldesc">Tricolor</div></div></div>
+      </div>
+
+      <div class="lblock">
+        <h4>Tamanho — TT</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 16px">
+          <div>
+            <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Infantil</div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">01</span><div><div class="ldesc">01</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">02</span><div><div class="ldesc">02</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">04</span><div><div class="ldesc">04</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">06</span><div><div class="ldesc">06</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">08</span><div><div class="ldesc">08</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">10</span><div><div class="ldesc">10</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">12</span><div><div class="ldesc">12</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">14</span><div><div class="ldesc">14</div></div></div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-family:'DM Mono',monospace;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Adulto</div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">16</span><div><div class="ldesc">PP</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">18</span><div><div class="ldesc">P</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">20</span><div><div class="ldesc">M</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">22</span><div><div class="ldesc">G</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">24</span><div><div class="ldesc">GG</div></div></div>
+            <div class="lrow"><span class="lkey" style="background:rgba(74,232,154,.1);color:var(--ok)">26</span><div><div class="ldesc">XGG</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ─── DADOS ───────────────────────────────────────────────────
+const ESCOLAS     = { '01':'Start Anglo', '02':'Liceu Pasteur' };
+const FORNECEDORES= { '01':{nome:'JFR Confecções',cad:'JFR'}, '02':{nome:'Cowcal',razao:'COWCAL PRODUCOES DE PRESENTES'} };
+const MESES       = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const TAM_MAP = {
+  '01':'01','02':'02','04':'04','06':'06','08':'08','10':'10','12':'12','14':'14',
+  '16':'PP','18':'P','20':'M','22':'G','24':'GG','26':'XGG'
+};
+const PRODUTO_MAP = {
+  // ── Start Anglo (ST) ──────────────────────────────────────────────────────
+  '100': 'Camiseta Algodão Conforto',
+  '101': 'Camiseta Dry Fit',
+  '102': 'Camiseta Algodão Premium',
+  '103': 'Regata Algodão',
+  '104': 'Camiseta Raglan',
+  '105': 'Camiseta Raglan Manga Longa',
+  '106': 'Camiseta Manga Longa',
+  '107': 'Camiseta Babylook',
+  '108': 'Camiseta Algodão Premium Infantil',
+  '109': 'Regata Algodão Infantil',
+  '110': 'Camiseta Liceu Algodão Conforto',
+  '111': 'Blusa Moletom Canguru',
+  '112': 'Casaco Moletinho c/ Punho',
+  '113': 'Casaco Moletom',
+  '114': 'Bermuda Ciclista Azul',
+  '115': 'Vestido Uniforme',
+  '116': 'Casaco Moletinho s/ Punho',
+  '117': 'Shorts Saia Infantil',
+  '118': 'Shorts Saia Adulto',
+  '119': 'Bermuda Moletinho',
+  '120': 'Bermuda Tactel',
+  '121': 'Shorts Interno p/ Vestido',
+  '122': 'Vestido Tricolor',
+  '123': 'Calça Bailarina',
+  '124': 'Bermuda Ciclista Mescla',
+  '300': 'Calça Legging',
+  '400': 'Calça Bailarina Sem Logo',
+  '409': 'Calça Moletom',
+  '410': 'Calça Moletinho',
+  '412': 'Blusa Moletom Canguru Liceu',
+  '500': 'Bermuda Uniforme',
+  '501': 'Bermuda Start Anglo',
+  '512': 'Bermuda Moletinho Start',
+  // ── Liceu Pasteur (LIC) ────────────────────────────────────────────────────
+  '200': 'Bermuda Ciclista Liceu',
+  '201': 'Calça Bailarina Liceu',
+  '202': 'Calça Moletinho Liceu',
+  '301': 'Shorts Saia Infantil Liceu',
+  '302': 'Shorts Saia Adulto Liceu',
+  '303': 'Shorts Liceu Moletinho',
+  '513': 'Bermuda Liceu Pasteur',
+  '600': 'Vestido Uniforme Liceu',
+  '602': 'Bermuda Tactel Liceu',
+  '603': 'Shorts Saia Adulto Liceu XGG',
+};
+const COR_MAP = { '01':'Azul','02':'Mescla','03':'Chumbo','04':'Branca','05':'Tricolor' };
+const SKU_ESCOLA = {'ST':'01','LIC':'02'};
+const SKU_FORN   = {'ST':'02','LIC':'01'}; // ST→Cowcal(02), LIC→JFR(01)
+
+function getCat(pref, prod){
+  const n = getProdNome(pref, prod);
+  if(n.includes('Camiseta')||n.includes('Regata')||n.includes('Babylook')||n.includes('CAMPANHA')) return 'Camiseta';
+  if(n.includes('Bermuda')) return 'Bermuda';
+  if(n.includes('Cal')) return 'Calça';
+  if(n.includes('Shorts')) return 'Shorts';
+  if(n.includes('Blusa')) return 'Blusa';
+  if(n.includes('Casaco')) return 'Casaco';
+  if(n.includes('Vestido')) return 'Vestido';
+  return 'Outro';
+}
+
+function makeLote(escola,forn,prod,tam,cor,mes,ano){
+  return forn + escola + String(prod).padStart(3,'0') + String(tam).padStart(2,'0')
+       + String(cor).padStart(2,'0') + String(mes).padStart(2,'0') + String(ano).slice(-2).padStart(2,'0');
+}
+
+function renderSegs(e,f,p,t,c,m,a){
+  return `
+    <div class="seg s-forn">${f}<span class="sl">Fornecedor</span></div>
+    <div class="seg s-escola">${e}<span class="sl">Escola</span></div>
+    <div class="seg s-prod">${p}<span class="sl">Produto</span></div>
+    <div class="seg s-tam">${t}<span class="sl">Tamanho</span></div>
+    <div class="seg s-cor">${c}<span class="sl">Cor</span></div>
+    <div class="seg s-mes">${m}<span class="sl">Mês</span></div>
+    <div class="seg s-ano">${a}<span class="sl">Ano</span></div>`;
+}
+
+function renderTiles(e,f,p,t,c,m,a){
+  const fd=FORNECEDORES[f]||{nome:'—',cad:'—'};
+  const mi=parseInt(m);
+  return `
+    <div class="dtile"><div class="dl">Fornecedor</div><div class="dv c-forn">${fd.nome}</div><div class="ds">Cód: ${f}</div></div>
+    <div class="dtile"><div class="dl">Escola</div><div class="dv c-escola">${ESCOLAS[e]||e}</div><div class="ds">Cód: ${e}</div></div>
+    <div class="dtile"><div class="dl">Produto</div><div class="dv c-prod">${PRODUTO_MAP[p]||'Produto '+p}</div><div class="ds">Cód: ${p}</div></div>
+    <div class="dtile"><div class="dl">Tamanho</div><div class="dv c-tam">${TAM_MAP[t]||t}</div><div class="ds">Cód: ${t} · ${parseInt(t)<=14?'Infantil':'Adulto'}</div></div>
+    <div class="dtile"><div class="dl">Cor</div><div class="dv c-cor">${COR_MAP[c]||'Cor '+c}</div><div class="ds">Cód: ${c}</div></div>
+    <div class="dtile"><div class="dl">Mês Fabricação</div><div class="dv c-mes">${MESES[mi]||m}</div><div class="ds">Cód: ${m}</div></div>
+    <div class="dtile"><div class="dl">Ano Fabricação</div><div class="dv c-ano">20${a}</div><div class="ds">Cód: ${a}</div></div>`;
+}
+
+// ─── GERADOR ─────────────────────────────────────────────────
+function gerarLote(){
+  const e=document.getElementById('g-escola').value;
+  const f=document.getElementById('g-forn').value;
+  const p=document.getElementById('g-prod').value;
+  const t=document.getElementById('g-tam').value;
+  const c=document.getElementById('g-cor').value;
+  const m=document.getElementById('g-mes').value;
+  const a=String(document.getElementById('g-ano').value).slice(-2).padStart(2,'0');
+  const num=makeLote(e,f,p,t,c,m,a);
+  document.getElementById('loteNumero').textContent=num;
+  document.getElementById('loteSegs').innerHTML=renderSegs(e,f,p,t,c,m,a);
+  document.getElementById('loteDtiles').innerHTML=renderTiles(e,f,p,t,c,m,a);
+  document.getElementById('loteDisplay').style.display='block'; verificarDuplicidade();
+}
+
+function copiarLote(){
+  const num=document.getElementById('loteNumero').textContent;
+  navigator.clipboard.writeText(num).then(()=>{
+    const btn=document.querySelector('.copy-btn');
+    const o=btn.textContent; btn.textContent='Copiado ✓';
+    setTimeout(()=>btn.textContent=o,1500);
+  });
+}
+
+function gerarCompleto(){
+  const e=document.getElementById('g-escola').value;
+  const f=document.getElementById('g-forn').value;
+  const p=document.getElementById('g-prod').value;
+  const c=document.getElementById('g-cor').value;
+  const m=document.getElementById('g-mes').value;
+  const a=String(document.getElementById('g-ano').value).slice(-2).padStart(2,'0');
+  const fd=FORNECEDORES[f]||{nome:'—',cad:'—'};
+  const rows=['01','02','04','06','08','10','12','14','16','18','20','22','24','26'].map(t=>{
+    const num=makeLote(e,f,p,t,c,m,a);
+    return `<tr>
+      <td><span class="lote-num" style="font-size:14px;color:var(--accent)">${num}</span></td>
+      <td style="color:var(--purple);font-size:12px">${ESCOLAS[e]||e}</td>
+      <td style="font-size:12px">${fd.nome} <span style="color:var(--muted)">(${fd.cad})</span></td>
+      <td style="font-size:12px">${PRODUTO_MAP[p]||p}</td>
+      <td><span class="tam-pill">${TAM_MAP[t]||t}</span></td>
+      <td style="font-size:12px;color:var(--ok)">${COR_MAP[c]||c}</td>
+      <td style="color:var(--muted);font-size:12px">${MESES[parseInt(m)]||m}/20${a}</td>
+      <td><button class="copy-btn" onclick="navigator.clipboard.writeText('${num}')">Copiar</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('completoBody').innerHTML=rows;
+  document.getElementById('completoWrap').style.display='block';
+}
+
+// ─── DECODIFICADOR ───────────────────────────────────────────
+function decodificarLote(){
+  const raw=document.getElementById('decInput').value.trim();
+  document.getElementById('decErr').style.display='none';
+  document.getElementById('decResult').style.display='none';
+  if(!raw){err('decErr','Insira o número do lote.');return;}
+  if(!/^\d{15}$/.test(raw)){err('decErr',`"${raw}" deve ter exatamente 15 dígitos numéricos.`);return;}
+  const f=raw.slice(0,2),e=raw.slice(2,4),p=raw.slice(4,7),t=raw.slice(7,9),c=raw.slice(9,11),m=raw.slice(11,13),a=raw.slice(13,15);
+  document.getElementById('decSegs').innerHTML=renderSegs(e,f,p,t,c,m,a);
+  document.getElementById('decTiles').innerHTML=renderTiles(e,f,p,t,c,m,a);
+  document.getElementById('decResult').style.display='block';
+}
+
+function decodificarSKU(){
+  const raw=document.getElementById('skuInput').value.trim().toUpperCase();
+  document.getElementById('skuErr').style.display='none';
+  document.getElementById('skuResult').style.display='none';
+  const mx=raw.match(/^([A-Z]{2,3})(\d{3})-(\d{2})(.*)$/);
+  if(!mx){err('skuErr',`SKU "${raw}" fora do formato esperado (ex: ST111-08).`);return;}
+  const [,pref,prod,tam,lote]=mx;
+  const ec=SKU_ESCOLA[pref]||'??';
+  const fc=SKU_FORN[pref]||'??';
+  const fd=FORNECEDORES[fc]||{nome:'—',cad:'—'};
+  document.getElementById('skuResult').innerHTML=`
+    <div class="dtile"><div class="dl">Escola</div><div class="dv c-escola">${ESCOLAS[ec]||ec}</div><div class="ds">Cód: ${ec}</div></div>
+    <div class="dtile"><div class="dl">Prefixo SKU</div><div class="dv c-forn">${pref}</div></div>
+    <div class="dtile"><div class="dl">Fornecedor</div><div class="dv c-forn">${fd.nome}</div><div class="ds">Cód: ${fc}</div></div>
+    <div class="dtile"><div class="dl">Produto</div><div class="dv c-prod">${PRODUTO_MAP[prod]||'Produto '+prod}</div><div class="ds">Cód: ${prod}</div></div>
+    <div class="dtile"><div class="dl">Tamanho</div><div class="dv c-tam">${TAM_MAP[tam]||tam}</div><div class="ds">Cód: ${tam} · ${parseInt(tam)<=14?'Infantil':'Adulto'}</div></div>
+    ${lote?`<div class="dtile"><div class="dl">Lote (formato anterior)</div><div class="dv c-mes">${lote}</div></div>`:''}`;
+  document.getElementById('skuResult').style.display='grid';
+}
+
+function err(id,msg){ const el=document.getElementById(id); el.textContent=msg; el.style.display='block'; }
+
+// ─── INVENTÁRIO ──────────────────────────────────────────────
+const RAW=[
+  'LIC110-04P',
+  'LIC110-06P',
+  'LIC110-08P',
+  'LIC110-0GP',
+  'LIC110-0MP',
+  'LIC110-0PP',
+  'LIC110-10Q',
+  'LIC110-12Q',
+  'LIC110-14Q',
+  'LIC110-GGQ',
+  'LIC110-PPQ',
+  'LIC111-04Q',
+  'LIC111-06Q',
+  'LIC111-08Q',
+  'LIC111-0GQ',
+  'LIC111-0MQ',
+  'LIC111-0PQ',
+  'LIC111-10R',
+  'LIC111-12R',
+  'LIC111-14R',
+  'LIC111-GGR',
+  'LIC111-PPR',
+  'LIC111XGGS',
+  'LIC112-04F',
+  'LIC112-06F',
+  'LIC112-08F',
+  'LIC113-04H',
+  'LIC113-06H',
+  'LIC113-08H',
+  'LIC113-0GH',
+  'LIC113-0MH',
+  'LIC113-0PH',
+  'LIC113-10I',
+  'LIC113-12I',
+  'LIC113-14I',
+  'LIC113-GGI',
+  'LIC113-PPI',
+  'LIC113XGGJ',
+  'LIC114-02N',
+  'LIC114-04N',
+  'LIC114-06N',
+  'LIC114-08N',
+  'LIC114-0GN',
+  'LIC114-0MN',
+  'LIC114-0PN',
+  'LIC114-10O',
+  'LIC114-12O',
+  'LIC114-14O',
+  'LIC114-GGO',
+  'LIC114-PPO',
+  'LIC200-04J',
+  'LIC200-06J',
+  'LIC200-08J',
+  'LIC200-10K',
+  'LIC200-12K',
+  'LIC200-14K',
+  'LIC201-04G',
+  'LIC201-06G',
+  'LIC201-08G',
+  'LIC201-0GG',
+  'LIC201-0MG',
+  'LIC201-0PG',
+  'LIC201-10H',
+  'LIC201-12H',
+  'LIC201-14H',
+  'LIC201-GGH',
+  'LIC201-PPH',
+  'LIC202-04F',
+  'LIC202-06F',
+  'LIC202-08F',
+  'LIC202-0GF',
+  'LIC202-0MF',
+  'LIC202-0PF',
+  'LIC202-10G',
+  'LIC202-12G',
+  'LIC202-14G',
+  'LIC202-GGG',
+  'LIC202-PPG',
+  'LIC202XGGH',
+  'LIC300-04',
+  'LIC300-06',
+  'LIC300-08',
+  'LIC300-10',
+  'LIC300-12',
+  'LIC300-14',
+  'LIC301-04G',
+  'LIC301-06G',
+  'LIC301-08G',
+  'LIC301-0GG',
+  'LIC301-0MG',
+  'LIC301-0PG',
+  'LIC301-10H',
+  'LIC301-12H',
+  'LIC301-14H',
+  'LIC301-GGH',
+  'LIC301-PPH',
+  'LIC302-04G',
+  'LIC302-06G',
+  'LIC302-08G',
+  'LIC302-0GG',
+  'LIC302-0MG',
+  'LIC302-0PG',
+  'LIC302-10H',
+  'LIC302-12H',
+  'LIC302-14H',
+  'LIC302-GGH',
+  'LIC302-PPH',
+  'LIC303-04H',
+  'LIC303-06H',
+  'LIC303-08H',
+  'LIC303-0GH',
+  'LIC303-0MH',
+  'LIC303-0PH',
+  'LIC303-10I',
+  'LIC303-12I',
+  'LIC303-14I',
+  'LIC303-GGI',
+  'LIC303-PPI',
+  'LIC410-04E',
+  'LIC410-06E',
+  'LIC410-08E',
+  'LIC410-0GE',
+  'LIC410-0ME',
+  'LIC410-0PE',
+  'LIC410-10F',
+  'LIC410-12F',
+  'LIC410-14F',
+  'LIC410-GGF',
+  'LIC410-PPF',
+  'LIC410XGGG',
+  'LIC513-04M',
+  'LIC513-06M',
+  'LIC513-08M',
+  'LIC513-0GM',
+  'LIC513-0MM',
+  'LIC513-0PM',
+  'LIC513-10N',
+  'LIC513-12N',
+  'LIC513-14N',
+  'LIC513-GGN',
+  'LIC513-PPN',
+  'LIC513XGGO',
+  'LIC600-04',
+  'LIC600-06E',
+  'LIC600-08E',
+  'LIC600-0GE',
+  'LIC600-0ME',
+  'LIC600-0PE',
+  'LIC600-10F',
+  'LIC600-12F',
+  'LIC600-14F',
+  'LIC600-GGF',
+  'LIC600-PPF',
+  'LIC600XGGG',
+  'LIC602-04R',
+  'LIC602-06R',
+  'LIC602-08R',
+  'LIC602-0GR',
+  'LIC602-0MR',
+  'LIC602-0PR',
+  'LIC602-10S',
+  'LIC602-12S',
+  'LIC602-14S',
+  'LIC602-GGS',
+  'LIC602-PPS',
+  'LIC602XGGT',
+  'LIC603-0GH',
+  'LIC603-0MH',
+  'LIC603-0PH',
+  'LIC603-GGI',
+  'LIC603-PPI',
+  'LIC603XGGJ',
+  'ST100-01B',
+  'ST100-02B',
+  'ST100-04B',
+  'ST100-06B',
+  'ST100-08B',
+  'ST100-0GB',
+  'ST100-0MB',
+  'ST100-0PB',
+  'ST100-10C',
+  'ST100-12C',
+  'ST100-14C',
+  'ST100-GGC',
+  'ST100-PPC',
+  'ST100XGGD',
+  'ST101-04',
+  'ST101-06',
+  'ST101-08',
+  'ST101-0G',
+  'ST101-0M',
+  'ST101-0P',
+  'ST101-10',
+  'ST101-12',
+  'ST101-14',
+  'ST101-GG',
+  'ST101-PP',
+  'ST101XGG',
+  'ST102-01',
+  'ST102-02',
+  'ST102-043',
+  'ST102-063',
+  'ST102-083',
+  'ST102-0G3',
+  'ST102-0M3',
+  'ST102-0P3',
+  'ST102-104',
+  'ST102-124',
+  'ST102-144',
+  'ST102-GG4',
+  'ST102-PP4',
+  'ST102XGG5',
+  'ST103-01',
+  'ST103-02',
+  'ST103-04B',
+  'ST103-06B',
+  'ST103-08B',
+  'ST103-0GB',
+  'ST103-0MB',
+  'ST103-0PB',
+  'ST103-10C',
+  'ST103-12C',
+  'ST103-14C',
+  'ST103-GGC',
+  'ST103-PPC',
+  'ST103XGGD',
+  'ST104-01',
+  'ST104-02',
+  'ST104-045',
+  'ST104-065',
+  'ST104-085',
+  'ST104-0G',
+  'ST104-0M',
+  'ST104-0P',
+  'ST104-106',
+  'ST104-126',
+  'ST104-146',
+  'ST104-GG',
+  'ST104-PP',
+  'ST104XGG',
+  'ST105-01',
+  'ST105-02',
+  'ST105-04E',
+  'ST105-06E',
+  'ST105-08E',
+  'ST105-0GE',
+  'ST105-0ME',
+  'ST105-0PE',
+  'ST105-10F',
+  'ST105-12F',
+  'ST105-14F',
+  'ST105-GGF',
+  'ST105-PPF',
+  'ST105XGGG',
+  'ST106-048',
+  'ST106-068',
+  'ST106-088',
+  'ST106-109',
+  'ST106-129',
+  'ST106-149',
+  'ST107-01',
+  'ST107-02',
+  'ST107-044',
+  'ST107-064',
+  'ST107-084',
+  'ST107-0G',
+  'ST107-0M',
+  'ST107-0P',
+  'ST107-105',
+  'ST107-125',
+  'ST107-145',
+  'ST107-GG',
+  'ST107-PP',
+  'ST107XGG',
+  'ST108-01',
+  'ST108-02',
+  'ST108-04C',
+  'ST108-06C',
+  'ST108-08C',
+  'ST108-10D',
+  'ST108-12D',
+  'ST108-14D',
+  'ST109-02',
+  'ST109-04D',
+  'ST109-06D',
+  'ST109-08D',
+  'ST109-0GD',
+  'ST109-0MD',
+  'ST109-0PD',
+  'ST109-10E',
+  'ST109-12E',
+  'ST109-14E',
+  'ST109-GGE',
+  'ST109-PPE',
+  'ST109XGGF',
+  'ST110-04',
+  'ST110-06',
+  'ST110-08',
+  'ST110-10',
+  'ST110-12',
+  'ST110-14',
+  'ST111-027',
+  'ST111-047',
+  'ST111-067',
+  'ST111-087',
+  'ST111-0G7',
+  'ST111-0M7',
+  'ST111-0P7',
+  'ST111-108',
+  'ST111-128',
+  'ST111-148',
+  'ST111-GG8',
+  'ST111-PP8',
+  'ST111XGG9',
+  'ST112-01',
+  'ST112-02',
+  'ST112-04D',
+  'ST112-06D',
+  'ST112-08D',
+  'ST112-0GD',
+  'ST112-0MD',
+  'ST112-0PD',
+  'ST112-10E',
+  'ST112-12E',
+  'ST112-14E',
+  'ST112-GGE',
+  'ST112-PPE',
+  'ST112XGGF',
+  'ST113-04',
+  'ST113-06',
+  'ST113-08',
+  'ST113-100',
+  'ST113-120',
+  'ST113-140',
+  'ST114-02',
+  'ST114-04',
+  'ST114-06',
+  'ST114-08',
+  'ST114-0G',
+  'ST114-0M',
+  'ST114-0P',
+  'ST114-10',
+  'ST114-12',
+  'ST114-14',
+  'ST114-GG',
+  'ST114-PP',
+  'ST114XGG',
+  'ST115-0G',
+  'ST115-0M',
+  'ST115-0P',
+  'ST115-GG',
+  'ST115-PP',
+  'ST115XGG',
+  'ST116-019',
+  'ST116-029',
+  'ST116-049',
+  'ST116-069',
+  'ST116-089',
+  'ST116-0G9',
+  'ST116-0M9',
+  'ST116-0P9',
+  'ST116-10',
+  'ST116-12',
+  'ST116-14',
+  'ST116-GG',
+  'ST116-PP',
+  'ST116XGG',
+  'ST117-029',
+  'ST117-049',
+  'ST117-069',
+  'ST117-089',
+  'ST117-0G9',
+  'ST117-0M9',
+  'ST117-0P9',
+  'ST117-10',
+  'ST117-12',
+  'ST117-14',
+  'ST117-GG',
+  'ST117-PP',
+  'ST117XGG',
+  'ST118-0G',
+  'ST118-0M',
+  'ST118-0P',
+  'ST118-GG',
+  'ST118-PP',
+  'ST118XGG',
+  'ST119-02',
+  'ST119-04',
+  'ST119-06',
+  'ST119-08',
+  'ST119-0G',
+  'ST119-0M',
+  'ST119-0P',
+  'ST119-10',
+  'ST119-12',
+  'ST119-14',
+  'ST119-GG',
+  'ST119-PP',
+  'ST119XGG',
+  'ST120-02D',
+  'ST120-04D',
+  'ST120-06D',
+  'ST120-08D',
+  'ST120-0GD',
+  'ST120-0MD',
+  'ST120-0PD',
+  'ST120-10E',
+  'ST120-12E',
+  'ST120-14E',
+  'ST120-GGE',
+  'ST120-PPE',
+  'ST120XGGF',
+  'ST121-01',
+  'ST121-02',
+  'ST121-04',
+  'ST121-06B',
+  'ST121-08B',
+  'ST121-0GB',
+  'ST121-0MB',
+  'ST121-0PB',
+  'ST121-10C',
+  'ST121-12C',
+  'ST121-14C',
+  'ST121-GGC',
+  'ST121-PPC',
+  'ST121XGGD',
+  'ST122-02D',
+  'ST122-04D',
+  'ST122-06D',
+  'ST122-08D',
+  'ST122-0GD',
+  'ST122-0MD',
+  'ST122-0PD',
+  'ST122-10E',
+  'ST122-12E',
+  'ST122-14E',
+  'ST122-GGE',
+  'ST122-PPE',
+  'ST122XGGF',
+  'ST123-047',
+  'ST123-067',
+  'ST123-087',
+  'ST123-0G7',
+  'ST123-0M7',
+  'ST123-0P7',
+  'ST123-108',
+  'ST123-128',
+  'ST123-148',
+  'ST123-GG8',
+  'ST123-PP8',
+  'ST123XGG9',
+  'ST124-04OUT',
+  'ST300-01',
+  'ST300-02',
+  'ST300-04',
+  'ST300-06',
+  'ST300-08',
+  'ST300-0G',
+  'ST300-0M',
+  'ST300-0P',
+  'ST300-10',
+  'ST300-12',
+  'ST300-14',
+  'ST300-GG',
+  'ST300-PP',
+  'ST300XGG',
+  'ST400-01C',
+  'ST400-02C',
+  'ST400-04C',
+  'ST400-06C',
+  'ST400-08C',
+  'ST400-0GC',
+  'ST400-0MC',
+  'ST400-0PC',
+  'ST400-10D',
+  'ST400-12D',
+  'ST400-14D',
+  'ST400-GGD',
+  'ST400-PPD',
+  'ST400XGGE',
+  'ST409-017',
+  'ST409-027',
+  'ST409-047',
+  'ST409-067',
+  'ST409-087',
+  'ST409-0G7',
+  'ST409-0M7',
+  'ST409-0P7',
+  'ST409-108',
+  'ST409-128',
+  'ST409-148',
+  'ST409-GG8',
+  'ST409-PP8',
+  'ST409XGG9',
+  'ST410-04OUTA',
+  'ST412-048',
+  'ST412-068',
+  'ST412-088',
+  'ST412-0G8',
+  'ST412-0M8',
+  'ST412-0P8',
+  'ST412-109',
+  'ST412-129',
+  'ST412-149',
+  'ST412-GG9',
+  'ST412-PP9',
+  'ST412XGG',
+  'ST500-02',
+  'ST500-04',
+  'ST500-06',
+  'ST500-08',
+  'ST500-0G',
+  'ST500-0M',
+  'ST500-0P',
+  'ST500-10',
+  'ST500-12',
+  'ST500-14',
+  'ST500-GG',
+  'ST500-PP',
+  'ST500XGG',
+  'ST501-02',
+  'ST501-04',
+  'ST501-06',
+  'ST501-08',
+  'ST501-0G',
+  'ST501-0M',
+  'ST501-0P',
+  'ST501-10A',
+  'ST501-12A',
+  'ST501-14A',
+  'ST501-GGA',
+  'ST501-PPA',
+  'ST512-04',
+  'ST512-06',
+  'ST512-08',
+  'ST512-0G',
+  'ST512-0M',
+  'ST512-0P',
+  'ST512-10',
+  'ST512-12',
+  'ST512-14',
+  'ST512-GG',
+  'ST512-PP',
+  'ST512XGGA'
+];
+function inferCor(prod,lote){
+  if(lote&&(lote.includes('MA')||lote.includes('MB')||lote.includes('M'))) return '02';
+  const p=PRODUTO_MAP[prod]||'';
+  if(p.includes('Chumbo')||p.includes('Moletinho')) return '03';
+  if(p.includes('Tricolor')) return '05';
+  if(p.includes('Branca')||p.includes('Dry Fit')) return '04';
+  return '01'; // default Azul
+}
+
+function getGrade(tam){
+  const n=parseInt(tam);
+  return n<=14 ? 'Infantil' : 'Adulto';
+}
+
+// Size normalization for new SKU format
+const SKU_SIZE_MAP = {
+  'XGG':'26','GG':'24','PP':'16','0G':'22','0M':'20','0P':'18'
+};
+function normalizeTT(suffix) {
+  const s = suffix.replace(/^-/,'');
+  for (const [k,v] of Object.entries(SKU_SIZE_MAP)) {
+    if (s.startsWith(k)) return v;
+  }
+  const m = s.match(/^(\d{2})/);
+  if (m && ['01','02','04','06','08','10','12','14'].includes(m[1])) return m[1];
+  return null;
+}
+
+function parseSKU(sku){
+  const mx=sku.match(/^([A-Z]{2,3})(\d{3})([-\w]*)$/);
+  if(!mx) return null;
+  const [,pref,prod,suffix]=mx;
+  const tt = normalizeTT(suffix);
+  if(!tt) return null;
+  const ec=SKU_ESCOLA[pref]||'??';
+  const fc=SKU_FORN[pref]||'??';
+  const fd=FORNECEDORES[fc]||{nome:'—',cad:'—'};
+  const cor=inferCor(prod,suffix);
+  const grade=getGrade(tt);
+  return {
+    sku, pref,
+    escola_cod:ec, escola_nome:ESCOLAS[ec]||pref,
+    forn_cod:fc, forn_nome:fd.nome, forn_cad:fd.cad,
+    produto_cod:prod, produto_nome:getProdNome(pref,prod),
+    tam_cod:tt, tam_letra:TAM_MAP[tt]||tt, grade,
+    cor_cod:'01', cor_nome:'—',
+    lote_num: makeLote(ec,fc,prod,tt,'01','05','26'),
+    categoria: getCat(pref,prod)
+  };
+}}
+
+const DATA=RAW.map(parseSKU).filter(Boolean);
+let sKey='sku', sDir=1;
+
+function sort(k){ sKey===k?sDir*=-1:(sKey=k,sDir=1); filtrar(); }
+
+function filtrar(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const f=document.getElementById('fornFilter').value;
+  const c=document.getElementById('catFilter').value;
+  let rows=DATA.filter(d=>
+    (!f||d.pref===f)&&(!c||d.categoria===c)&&
+    (!q||d.sku.toLowerCase().includes(q)||d.produto_nome.toLowerCase().includes(q)||d.lote_num.includes(q))
+  );
+  rows.sort((a,b)=>{
+    const av=a[sKey]||'',bv=b[sKey]||'';
+    return av<bv?-sDir:av>bv?sDir:0;
+  });
+  document.getElementById('countBadge').textContent=`${rows.length} SKUs`;
+  document.getElementById('tBody').innerHTML=rows.map(d=>`
+    <tr>
+      <td><span class="sku-code">${d.sku}</span></td>
+      <td style="color:var(--purple);font-size:12px">${d.escola_nome}</td>
+      <td><span class="tag tag-${d.pref}">${d.pref==="ST"?"02":"01"}</span> <span style="color:var(--muted);font-size:11px">${d.forn_nome}</span></td>
+      <td style="font-size:12px">${d.produto_nome}</td>
+      <td><span class="tam-pill">${d.tam_letra}</span></td>
+      <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${d.grade}</td>
+      <td style="color:#d07ef0;font-size:12px">${d.cor_nome}</td>
+      <td><span class="lote-num">${d.lote_num}</span></td>
+      <td class="td-bc" data-lote="${d.lote_num}"></td>
+      <td><input type="number" min="1" max="9999" value="1" id="qty_${d.lote_num}"
+        style="width:64px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;text-align:center;outline:none"></td>
+      <td><button class="copy-btn" style="font-size:11px;padding:5px 10px;white-space:nowrap"
+        onclick="imprimirEtiqueta('${d.sku}','${d.produto_nome}','${d.tam_cod}','${d.tam_letra}','${d.cor_nome}','${d.lote_num}',document.getElementById('qty_${d.lote_num}').value)">🖨 Imprimir</button></td>
+    </tr>`).join('');
+}
+
+
+// ─── BARCODE RENDER IN INVENTORY ───────────────────────────────────────────
+function renderBarcodes() {
+  document.querySelectorAll('.td-bc[data-lote]').forEach(function(td) {
+    var lot = td.getAttribute('data-lote');
+    if (!lot || td.getAttribute('data-r')) return;
+    var bin = encodeLot128(lot);
+    if (!bin) return;
+    var Q=6, W=bin.length+Q*2, H=26;
+    var rects=''; var x=Q;
+    for (var i=0;i<bin.length;i++) {
+      if (bin[i]==='1') rects+='<rect x="'+x+'" y="0" width="1" height="'+H+'" fill="#000"/>';
+      x++;
+    }
+    td.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" style="width:110px;height:22px;display:block"><rect width="'+W+'" height="'+H+'" fill="white"/>'+rects+'</svg>';
+    td.setAttribute('data-r','1');
+  });
+}
+
+// ─── TABS ────────────────────────────────────────────────────
+function showTab(id){
+  const ids=['gerador','decodificador','inventario','legenda','barcode','historico'];
+  ids.forEach(i=>{
+    document.getElementById('tab-'+i).classList.toggle('active',i===id);
+  });
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+document.getElementById('decInput').addEventListener('keydown',e=>{ if(e.key==='Enter') decodificarLote(); });
+document.getElementById('skuInput').addEventListener('keydown',e=>{ if(e.key==='Enter') decodificarSKU(); });
+document.getElementById('skuInput').addEventListener('input',e=>{ e.target.value=e.target.value.toUpperCase(); });
+gerarLote();
+filtrar();
+loadHist().then(renderHistorico);
+</script>
+
+<!-- =================== CÓDIGO DE BARRAS =================== -->
+<div id="tab-barcode" class="panel">
+<div class="main">
+
+  <div class="card">
+    <div class="section-label">Gerador de Código de Barras — Code 128 (GS1 Compatible)</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+      Insira um número de lote de 15 dígitos ou use o gerador para criar automaticamente.
+      O código é gerado no formato <b style="color:var(--accent)">Code 128C/B</b> — padrão universal compatível com GS1-128, Bling e leitores industriais.
+    </p>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px">
+      <div style="flex:1;min-width:200px">
+        <label style="display:block;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-bottom:6px">Número do Lote (15 dígitos)</label>
+        <input type="text" id="bcInput" style="font-size:22px;letter-spacing:3px;padding:14px 18px;" maxlength="15" placeholder="010111122010526" oninput="this.value=this.value.replace(/\D/g,'')">
+      </div>
+      <button class="btn" onclick="gerarBarcode()">Gerar Código</button>
+      <button class="btn sec" onclick="usarLoteAtual()">Usar lote do gerador</button>
+    </div>
+    <div class="error-msg" id="bcErr"></div>
+
+    <div id="bcResult" style="display:none">
+      <!-- Barcode display -->
+      <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;margin-bottom:20px">
+        <svg id="bcSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <!-- Info tiles -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">
+        <div class="dtile"><div class="dl">Formato</div><div class="dv" style="color:var(--accent);font-size:13px">Code 128C/B</div></div>
+        <div class="dtile"><div class="dl">Módulos totais</div><div class="dv c-forn" id="bcModules">—</div></div>
+        <div class="dtile"><div class="dl">Caractere de verificação</div><div class="dv c-ok" id="bcCheck">—</div></div>
+        <div class="dtile"><div class="dl">Número do Lote</div><div class="dv c-accent" id="bcLotNum" style="font-family:'DM Mono',monospace;letter-spacing:2px">—</div></div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn" onclick="downloadBarcode()">⬇ Baixar SVG</button>
+        <button class="btn sec" onclick="printBarcode()">🖨 Imprimir</button>
+        <button class="copy-btn" style="font-size:13px;padding:8px 20px" onclick="copiarBcNum()">Copiar número</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Lote Completo com Códigos de Barras</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+      Gera os códigos de barras para todos os 14 tamanhos do produto selecionado no Gerador de Lote.
+    </p>
+    <button class="btn" onclick="gerarTodosBarcodes()">Gerar todos os tamanhos</button>
+    <div id="allBcWrap" style="display:none;margin-top:24px;overflow-x:auto"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ── CODE 128 VERIFIED TABLE (from ReportLab / ISO 15417) ─────────────────────
+const C128 = [
+  '11011001100', // 0
+  '11001101100', // 1
+  '11001100110', // 2
+  '10010011000', // 3
+  '10010001100', // 4
+  '10001001100', // 5
+  '10011001000', // 6
+  '10011000100', // 7
+  '10001100100', // 8
+  '11001001000', // 9
+  '11001000100', // 10
+  '11000100100', // 11
+  '10110011100', // 12
+  '10011011100', // 13
+  '10011001110', // 14
+  '10111001100', // 15
+  '10011101100', // 16
+  '10011100110', // 17
+  '11001110010', // 18
+  '11001011100', // 19
+  '11001001110', // 20
+  '11011100100', // 21
+  '11001110100', // 22
+  '11101101110', // 23
+  '11101001100', // 24
+  '11100101100', // 25
+  '11100100110', // 26
+  '11101100100', // 27
+  '11100110100', // 28
+  '11100110010', // 29
+  '11011011000', // 30
+  '11011000110', // 31
+  '11000110110', // 32
+  '10100011000', // 33
+  '10001011000', // 34
+  '10001000110', // 35
+  '10110001000', // 36
+  '10001101000', // 37
+  '10001100010', // 38
+  '11010001000', // 39
+  '11000101000', // 40
+  '11000100010', // 41
+  '10110111000', // 42
+  '10110001110', // 43
+  '10001101110', // 44
+  '10111011000', // 45
+  '10111000110', // 46
+  '10001110110', // 47
+  '11101110110', // 48
+  '11010001110', // 49
+  '11000101110', // 50
+  '11011101000', // 51
+  '11011100010', // 52
+  '11011101110', // 53
+  '11101011000', // 54
+  '11101000110', // 55
+  '11100010110', // 56
+  '11101101000', // 57
+  '11101100010', // 58
+  '11100011010', // 59
+  '11101111010', // 60
+  '11001000010', // 61
+  '11110001010', // 62
+  '10100110000', // 63
+  '10100001100', // 64
+  '10010110000', // 65
+  '10010000110', // 66
+  '10000101100', // 67
+  '10000100110', // 68
+  '10110010000', // 69
+  '10110000100', // 70
+  '10011010000', // 71
+  '10011000010', // 72
+  '10000110100', // 73
+  '10000110010', // 74
+  '11000010010', // 75
+  '11001010000', // 76
+  '11110111010', // 77
+  '11000010100', // 78
+  '10001111010', // 79
+  '10100111100', // 80
+  '10010111100', // 81
+  '10010011110', // 82
+  '10111100100', // 83
+  '10011110100', // 84
+  '10011110010', // 85
+  '11110100100', // 86
+  '11110010100', // 87
+  '11110010010', // 88
+  '11011011110', // 89
+  '11011110110', // 90
+  '11110110110', // 91
+  '10101111000', // 92
+  '10100011110', // 93
+  '10001011110', // 94
+  '10111101000', // 95
+  '10111100010', // 96
+  '11110101000', // 97
+  '11110100010', // 98
+  '10111011110', // 99
+  '10111101110', // 100
+  '11101011110', // 101
+  '11110101110', // 102
+  '11010000100', // 103
+  '11010010000', // 104
+  '11010011100', // 105
+  '1100011101011', // 106
+];
+
+function encodeLot128(lot) {
+  if (!/^\d{15}$/.test(lot)) return null;
+  const syms = [];
+  let check = 0;
+
+  // START C
+  syms.push(105); check = 105;
+
+  // 7 pairs (Code C: 14 digits)
+  for (let i = 0; i < 14; i += 2) {
+    const v = parseInt(lot.substr(i, 2));
+    syms.push(v);
+    check += v * syms.length;
+  }
+
+  // Switch to Code B
+  syms.push(100); check += 100 * syms.length;
+
+  // Last digit in Code B
+  const lastSym = 16 + parseInt(lot[14]);
+  syms.push(lastSym); check += lastSym * syms.length;
+
+  // Check character + STOP
+  syms.push(check % 103);
+  syms.push(106); // STOP
+
+  return syms.map(s => C128[s]).join('');
+}
+
+function binaryToSVG(binary, barW, height, lot) {
+  const quiet = 20;
+  const totalW = binary.length * barW + quiet * 2;
+  const totalH = height + 22;
+  let rects = '';
+  let x = quiet;
+  for (const bit of binary) {
+    if (bit === '1') rects += `<rect x="${x}" y="0" width="${barW}" height="${height}" fill="black"/>`;
+    x += barW;
+  }
+  return { w: totalW, h: totalH, svg: `
+    <rect width="${totalW}" height="${totalH}" fill="white"/>
+    ${rects}
+    <text x="${totalW/2}" y="${height+16}" text-anchor="middle" font-family="monospace" font-size="12" fill="#333">${lot}</text>` };
+}
+
+function gerarBarcode() {
+  const lot = document.getElementById('bcInput').value.trim();
+  const errEl = document.getElementById('bcErr');
+  errEl.style.display = 'none';
+  document.getElementById('bcResult').style.display = 'none';
+
+  if (!/^\d{15}$/.test(lot)) {
+    errEl.textContent = 'Insira exatamente 15 dígitos numéricos.';
+    errEl.style.display = 'block'; return;
+  }
+
+  const binary = encodeLot128(lot);
+  if (!binary) { errEl.textContent = 'Erro na codificação.'; errEl.style.display = 'block'; return; }
+
+  const barW = 2;
+  const { w, h, svg } = binaryToSVG(binary, barW, 70, lot);
+
+  const svgEl = document.getElementById('bcSvg');
+  svgEl.setAttribute('width', w);
+  svgEl.setAttribute('height', h);
+  svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svgEl.innerHTML = svg;
+
+  // Compute check char
+  let check = 105;
+  const syms = [105];
+  for (let i = 0; i < 14; i+=2) { const v=parseInt(lot.substr(i,2)); syms.push(v); check += v*syms.length; }
+  syms.push(100); check += 100*syms.length;
+  const lastSym = 16+parseInt(lot[14]); syms.push(lastSym); check += lastSym*syms.length;
+  const checkVal = check % 103;
+
+  document.getElementById('bcModules').textContent = binary.length;
+  document.getElementById('bcCheck').textContent = checkVal;
+  document.getElementById('bcLotNum').textContent = lot;
+  document.getElementById('bcResult').style.display = 'block';
+}
+
+function usarLoteAtual() {
+  const num = document.getElementById('loteNumero').textContent;
+  if (num && /^\d{15}$/.test(num)) {
+    document.getElementById('bcInput').value = num;
+    gerarBarcode();
+  } else {
+    const err = document.getElementById('bcErr');
+    err.textContent = 'Gere um lote válido de 15 dígitos na aba Gerador primeiro.';
+    err.style.display = 'block';
+  }
+}
+
+function downloadBarcode() {
+  const lot = document.getElementById('bcInput').value;
+  const binary = encodeLot128(lot);
+  const { w, h, svg } = binaryToSVG(binary, 2, 70, lot);
+  const full = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
+  const a = document.createElement('a');
+  a.href = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(full);
+  a.download = `lote_${lot}.svg`;
+  a.click();
+}
+
+function printBarcode() {
+  const lot = document.getElementById('bcInput').value;
+  const binary = encodeLot128(lot);
+  const { w, h, svg } = binaryToSVG(binary, 3, 80, lot);
+  const full = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${svg}</svg>`;
+  const win = window.open('', '_blank');
+  win.document.write(`<html><head><title>Lote ${lot}</title></head><body style="margin:20px;background:#fff">${full}<p style="font-family:monospace;text-align:center;margin-top:10px;font-size:14px">Nº Lote: ${lot}</p>
+<!-- =================== HISTÓRICO =================== -->
+<div id="tab-historico" class="panel">
+<div class="main">
+  <div class="card">
+    <div class="section-label">Histórico de Lotes Registrados</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+      Registro completo de lotes criados, com rastreabilidade de datas e contagem de etiquetas impressas.
+      Lotes são salvos ao clicar em <b style="color:var(--ok)">Registrar Lote no Histórico</b> no Gerador.
+    </p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn" onclick="renderHistorico()">↺ Atualizar</button>
+      <button class="btn sec" onclick="if(confirm('Apagar todo o histórico?')){HIST=[];saveHist();renderHistorico()}">🗑 Limpar histórico</button>
+    </div>
+    <div id="histTabela"><p style="color:var(--muted);font-size:13px">Carregando...</p></div>
+  </div>
+</div>
+</div>
+
+</body></html>`);
+  win.document.close();
+  win.print();
+}
+
+function copiarBcNum() {
+  const lot = document.getElementById('bcInput').value;
+  navigator.clipboard.writeText(lot);
+}
+
+function imprimirDoGerador() {
+  const num   = document.getElementById('loteNumero').textContent;
+  const qty   = parseInt(document.getElementById('g-qty').value) || 1;
+  const prod  = document.getElementById('g-prod').value;
+  const tam   = document.getElementById('g-tam').value;
+  const cor   = document.getElementById('g-cor').value;
+  const escola= document.getElementById('g-escola').value;
+  if (!num || !/^\d{15}$/.test(num)) { alert('Gere um lote válido de 15 dígitos antes de imprimir.'); return; }
+  const nomeProd  = PRODUTO_MAP[prod] || 'Produto ' + prod;
+  const pref      = {'01':'ST','02':'LIC'}[escola] || 'ST';
+  const skuCode   = pref + prod + '-' + tam;
+  const tamLabel  = TAM_MAP[tam] || tam;
+  const corNome   = COR_MAP[cor]  || cor;
+  imprimirEtiqueta(skuCode, nomeProd, tam, tamLabel, corNome, num, qty);
+}
+
+// ─── HISTÓRICO DE LOTES (localStorage via window.storage) ────────────────────
+let HIST = [];  // in-memory cache
+
+async function loadHist() {
+  try {
+    const r = await window.storage.get('lots-history');
+    HIST = r ? JSON.parse(r.value) : [];
+  } catch(e) { HIST = []; }
+  return HIST;
+}
+
+async function saveHist() {
+  try { await window.storage.set('lots-history', JSON.stringify(HIST)); } catch(e) {}
+}
+
+async function registrarLote(loteNum, skuCode, prodNome, tam, tamLabel, cor, corNome, escola, forn) {
+  await loadHist();
+  const existe = HIST.find(h => h.lote === loteNum);
+  if (existe) return { duplicate: true, entry: existe };
+  const entry = {
+    lote: loteNum, sku: skuCode, produto: prodNome,
+    tam, tamLabel, cor, corNome, escola, forn,
+    criado: new Date().toISOString(),
+    impressoes: []
+  };
+  HIST.unshift(entry);
+  await saveHist();
+  return { duplicate: false, entry };
+}
+
+async function registrarImpressao(loteNum, qty) {
+  await loadHist();
+  const entry = HIST.find(h => h.lote === loteNum);
+  if (!entry) return;
+  entry.impressoes.push({ data: new Date().toISOString(), qty: parseInt(qty) });
+  await saveHist();
+}
+
+function totalImpresso(entry) {
+  return (entry.impressoes || []).reduce((s, i) => s + i.qty, 0);
+}
+
+// Chamada ao gerar lote: verifica duplicidade
+async function verificarDuplicidade() {
+  const num = document.getElementById('loteNumero').textContent;
+  if (!num || !/^\d{15}$/.test(num)) return;
+  await loadHist();
+  const existe = HIST.find(h => h.lote === num);
+  const div = document.getElementById('loteDupAlert');
+  if (existe) {
+    const total = totalImpresso(existe);
+    div.innerHTML = `⚠️ Lote <b>${num}</b> já registrado em ${new Date(existe.criado).toLocaleDateString('pt-BR')} — ${total} etiqueta${total!==1?'s':''} impressa${total!==1?'s':''}.`;
+    div.style.display = 'block';
+  } else {
+    div.style.display = 'none';
+  }
+}
+
+// Botão "Registrar Lote"
+async function registrarLoteAtual() {
+  const num   = document.getElementById('loteNumero').textContent;
+  const prod  = document.getElementById('g-prod').value;
+  const tam   = document.getElementById('g-tam').value;
+  const cor   = document.getElementById('g-cor').value;
+  const escola= document.getElementById('g-escola').value;
+  const forn  = document.getElementById('g-forn').value;
+  if (!num || !/^\d{15}$/.test(num)) { alert('Gere um lote antes de registrar.'); return; }
+  const pref  = {'01':'ST','02':'LIC'}[escola] || 'ST';
+  const res = await registrarLote(
+    num, pref+prod+'-'+tam,
+    PRODUTO_MAP[prod]||prod, tam, TAM_MAP[tam]||tam,
+    cor, COR_MAP[cor]||cor,
+    ESCOLAS[escola]||escola,
+    (FORNECEDORES[forn]||{nome:'—'}).nome
+  );
+  if (res.duplicate) {
+    alert(`Lote ${num} já existe no histórico (criado em ${new Date(res.entry.criado).toLocaleDateString('pt-BR')}).`);
+  } else {
+    document.getElementById('loteSalvoMsg').style.display='block';
+    setTimeout(()=>document.getElementById('loteSalvoMsg').style.display='none', 3000);
+    renderHistorico();
+  }
+}
+
+// ─── RENDER HISTÓRICO ─────────────────────────────────────────────────────────
+async function renderHistorico() {
+  await loadHist();
+  const wrap = document.getElementById('histTabela');
+  if (!HIST.length) {
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:20px 0">Nenhum lote registrado ainda. Use o Gerador e clique em "Registrar Lote".</p>';
+    return;
+  }
+  wrap.innerHTML = `<div class="tw"><table>
+    <thead><tr>
+      <th>Nº Lote</th><th>SKU</th><th>Produto</th>
+      <th>Tamanho</th><th>Cor</th><th>Escola</th>
+      <th>Criado em</th><th>Total Impresso</th><th>Impressões</th><th></th>
+    </tr></thead>
+    <tbody>${HIST.map((h,i) => {
+      const total = totalImpresso(h);
+      const hist  = (h.impressoes||[]).map(im=>`${new Date(im.data).toLocaleDateString('pt-BR')}: ${im.qty}×`).join(' | ');
+      return `<tr>
+        <td><span class="lote-num">${h.lote}</span></td>
+        <td><span class="sku-code">${h.sku}</span></td>
+        <td style="font-size:12px">${h.produto}</td>
+        <td><span class="tam-pill">${h.tamLabel}</span></td>
+        <td style="color:#d07ef0;font-size:12px">${h.corNome}</td>
+        <td style="font-size:12px;color:var(--purple)">${h.escola}</td>
+        <td style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${new Date(h.criado).toLocaleDateString('pt-BR')}</td>
+        <td style="text-align:center"><span style="font-family:'DM Mono',monospace;font-size:14px;color:var(--ok);font-weight:600">${total}</span></td>
+        <td style="font-size:10px;color:var(--muted)">${hist||'—'}</td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="number" min="1" max="9999" value="1" id="hqty_${i}"
+              style="width:52px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:3px 5px;border-radius:4px;text-align:center;outline:none">
+            <button class="copy-btn" style="font-size:11px;padding:4px 8px;white-space:nowrap"
+              onclick="imprimirDoHistorico(${i})">🖨</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+async function imprimirDoHistorico(idx) {
+  const h   = HIST[idx];
+  const qty = parseInt(document.getElementById('hqty_'+idx).value) || 1;
+  imprimirEtiqueta(h.sku, h.produto, h.tam, h.tamLabel, h.corNome, h.lote, qty);
+  await registrarImpressao(h.lote, qty);
+  setTimeout(renderHistorico, 400);
+}
+
+// ─── IMPRESSÃO DE ETIQUETA (modelo E-UNIQUE) ─────────────────────────────────
+function gerarSVGBarcode(loteNum, barW, height) {
+  const binary = encodeLot128(loteNum);
+  if (!binary) return null;
+  const quiet  = 16;
+  const totalW = binary.length * barW + quiet * 2;
+  let rects = '';
+  let x = quiet;
+  for (const bit of binary) {
+    if (bit === '1') rects += `<rect x="${x}" y="0" width="${barW}" height="${height}" fill="black"/>`;
+    x += barW;
+  }
+  return { w: totalW, h: height, svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${height}" viewBox="0 0 ${totalW} ${height}"><rect width="${totalW}" height="${height}" fill="white"/>${rects}</svg>` };
+}
+
+async function imprimirEtiqueta(skuCode, prodNome, tam, tamLabel, corNome, loteNum, qty) {
+  qty = parseInt(qty) || 1;
+
+  /* ── Gera barcode (Code 128 C/B) ────────────────────────────── */
+  const binary = encodeLot128(loteNum);
+  if (!binary) { alert('Erro ao gerar código de barras para o lote ' + loteNum); return; }
+
+  // Barcode SVG calibrado para 44mm de largura útil
+  // 44mm / 134 módulos ≈ 0.328mm/módulo → 0.328 * (96/25.4) ≈ 1.24px screen
+  // Para preview legível usamos escala screen=2px/módulo, print usa viewBox+width:100%
+  const MODS = binary.length;
+  const QUIET = 8;
+  const BC_W  = MODS + QUIET * 2;   // viewBox units (1 unit = 1 módulo)
+  const BC_H  = 40;                  // viewBox units
+  let bcRects = '';
+  for (let i = 0; i < MODS; i++) {
+    if (binary[i] === '1')
+      bcRects += `<rect x="${QUIET + i}" y="0" width="1" height="${BC_H}" fill="#000"/>`;
+  }
+  // SVG sem width/height fixos → escala via CSS width:100%
+  const bcSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${BC_W} ${BC_H}" preserveAspectRatio="none"><rect width="${BC_W}" height="${BC_H}" fill="#fff"/>${bcRects}</svg>`;
+
+  /* ── Logo E-UNIQUE (fiel ao original) ───────────────────────── */
+  // Círculo plano cinza escuro (#404040)
+  // Borda externa: linha fina branca
+  // Anel interno: círculo concêntrico menor, linha fina branca
+  // Texto: branco, fino, tracking amplo, geométrico
+  const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="48" fill="#404040" stroke="#f2f2f2" stroke-width="1.8"/>
+    <circle cx="50" cy="50" r="40" fill="none"    stroke="#f2f2f2" stroke-width="1.1"/>
+    <text x="50" y="55"
+      text-anchor="middle"
+      fill="#ffffff"
+      font-family="'Century Gothic','Trebuchet MS',Arial,Helvetica,sans-serif"
+      font-size="15"
+      font-weight="300"
+      letter-spacing="4.5"
+      xml:space="preserve">E-UNIQUE</text>
+  </svg>`;
+
+  /* ── SKU em formato human-readable espaçado ─────────────────── */
+  const skuHR = skuCode.split('').join('  ');
+
+  /* ── HTML de uma etiqueta ────────────────────────────────────── */
+  // Dimensões impressas: 50mm × 75mm
+  // Espaço superior 10mm para fixação (furo de 4mm de Ø em y=5mm)
+  // Logo: 26mm Ø, centro em y=22mm (de 9mm a 35mm)
+  // Texto produto: 35–49mm
+  // Barcode: 49–62mm (13mm de altura)
+  // Texto barcode+lote: 62–68mm
+  // Footer: 68–74mm
+  const oneLabel = `<div class="tag">
+  <div class="tag-top">
+    <div class="tag-hole"></div>
+  </div>
+  <div class="tag-logo">${LOGO}</div>
+  <div class="tag-body">
+    <div class="tag-name">${prodNome}</div>
+    <div class="tag-detail">Tamanho:${tamLabel};Cor:${corNome}</div>
+    <div class="tag-sku">${skuCode}</div>
+  </div>
+  <div class="tag-bc-wrap">
+    <div class="tag-bc">${bcSVG}</div>
+    <div class="tag-bc-text">${skuHR}</div>
+    <div class="tag-lot">Lote: ${loteNum}</div>
+  </div>
+  <div class="tag-footer">Troca ou devolução somente com esta etiqueta fixada na roupa.</div>
+</div>`;
+
+  const allLabels = Array(qty).fill(oneLabel).join('\n');
+
+  /* ── Abre janela de impressão ────────────────────────────────── */
+  const win = window.open('', '_blank', 'width=1000,height=760');
+  if (!win) { alert('Popup bloqueado. Permita popups para este site.'); return; }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>TAG ${skuCode} — Lote ${loteNum} — ${qty}×</title>
+<style>
+/* ───────────────── RESET ───────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Century Gothic','Trebuchet MS',Arial,Helvetica,sans-serif;
+  background:#d8d8d8;
+  padding:16px;
+}
+
+/* ───────────────── CONTROLES (some na impressão) ───────────────── */
+.ctrl{
+  display:flex;gap:10px;justify-content:center;
+  margin-bottom:14px;flex-wrap:wrap;
+}
+.ctrl button{
+  background:#1a2744;color:#fff;border:none;
+  padding:10px 28px;border-radius:6px;
+  font-size:14px;font-weight:700;cursor:pointer;
+}
+.ctrl button.sec{background:#ccc;color:#333}
+.info{
+  text-align:center;font-size:12px;color:#555;
+  margin-bottom:14px;line-height:1.6;
+}
+
+/* ───────────────── GRADE ───────────────── */
+.grid{
+  display:flex;flex-wrap:wrap;
+  gap:14px;
+  justify-content:flex-start;
+}
+
+/* ───────────────── TAG 50mm × 75mm ───────────────── */
+/* Screen: 1mm = 3.78px  →  50mm=189px, 75mm=284px   */
+/* Print:  use mm directly via @media print           */
+
+.tag{
+  width:189px;          /* 50mm × 3.78 */
+  height:284px;         /* 75mm × 3.78 */
+  background:#fff;
+  border:1px solid #bbb;
+  border-radius:3px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+  page-break-inside:avoid;
+  break-inside:avoid;
+  position:relative;
+}
+
+/* Área superior para fixação: 10mm = 37.8px */
+.tag-top{
+  width:100%;
+  height:37px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-bottom:0.5px dashed #ddd;
+}
+.tag-hole{
+  width:14px;height:14px;
+  border-radius:50%;
+  border:1.5px dashed #aaa;
+  margin-top:4px;
+}
+
+/* Logo: 26mm Ø = 98px → proporção em SVG 100×100 viewBox */
+/* Container: 26mm = 98px */
+.tag-logo{
+  width:98px;height:98px;
+  flex-shrink:0;
+  margin:4px 0 3px;
+}
+.tag-logo svg{width:100%;height:100%;display:block}
+
+/* Corpo do texto */
+.tag-body{
+  width:100%;
+  padding:0 8px;
+  text-align:center;
+  flex-shrink:0;
+}
+.tag-name{
+  font-size:10px;
+  font-weight:700;
+  color:#111;
+  line-height:1.3;
+  margin-bottom:1px;
+}
+.tag-detail{
+  font-size:9.5px;
+  font-weight:700;
+  color:#111;
+  margin-bottom:2px;
+}
+.tag-sku{
+  font-size:8.5px;
+  color:#444;
+  letter-spacing:0.5px;
+  margin-bottom:4px;
+}
+
+/* Área do código de barras: isolada, sem texto sobreposto */
+.tag-bc-wrap{
+  width:100%;
+  padding:0 6px;
+  flex-shrink:0;
+}
+.tag-bc{
+  width:100%;
+  line-height:0;
+  margin-bottom:1px;
+}
+.tag-bc svg{
+  width:100%;
+  height:40px;     /* altura fixa em px */
+  display:block;
+}
+.tag-bc-text{
+  font-family:'Courier New',monospace;
+  font-size:7px;
+  letter-spacing:1.5px;
+  color:#222;
+  text-align:center;
+  line-height:1;
+  white-space:nowrap;
+  overflow:hidden;
+}
+.tag-lot{
+  font-family:'Courier New',monospace;
+  font-size:6.5px;
+  color:#666;
+  letter-spacing:1px;
+  text-align:center;
+  margin-top:1px;
+}
+
+/* Rodapé */
+.tag-footer{
+  width:100%;
+  padding:3px 8px 4px;
+  margin-top:auto;
+  font-size:7.5px;
+  color:#111;
+  line-height:1.4;
+  text-align:left;
+  border-top:0.5px solid #ddd;
+}
+
+/* ───────────────── PRINT ───────────────── */
+@media print{
+  body{background:#fff;padding:6mm}
+  .ctrl,.info{display:none!important}
+  .grid{gap:5mm}
+
+  .tag{
+    width:50mm;
+    height:75mm;
+    border:0.3pt solid #999;
+    border-radius:1mm;
+  }
+  .tag-top{
+    height:10mm;
+    border-bottom:0.3pt dashed #ccc;
+  }
+  .tag-hole{
+    width:4mm;height:4mm;
+    border:0.5pt dashed #888;
+    margin-top:1mm;
+  }
+  .tag-logo{
+    width:26mm;height:26mm;
+    margin:1mm 0;
+  }
+  .tag-body{padding:0 2mm}
+  .tag-name   {font-size:7.5pt;margin-bottom:0.3mm}
+  .tag-detail {font-size:7pt;margin-bottom:0.5mm}
+  .tag-sku    {font-size:6.5pt;margin-bottom:1mm}
+  .tag-bc-wrap{padding:0 1.5mm}
+  .tag-bc svg {height:12mm}
+  .tag-bc-text{font-size:5.5pt;letter-spacing:1pt}
+  .tag-lot    {font-size:5pt;margin-top:0.5mm}
+  .tag-footer {font-size:5.5pt;padding:1.5mm 2mm}
+}
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <button onclick="window.print()">🖨 Imprimir ${qty} etiqueta${qty>1?'s':''}</button>
+  <button class="sec" onclick="window.close()">Fechar</button>
+</div>
+<div class="info">
+  <strong>${prodNome}</strong><br>
+  SKU: <code>${skuCode}</code> &nbsp;·&nbsp; Lote: <code>${loteNum}</code> &nbsp;·&nbsp; ${qty} etiqueta${qty>1?'s':''}
+</div>
+<div class="grid">
+${allLabels}
+</div>
+</body>
+</html>`);
+  win.document.close();
+
+  // Registra impressão no histórico
+  await registrarImpressao(loteNum, qty);
+  setTimeout(renderHistorico, 500);
+}
+
+// ─── GERAR TODOS BARCODES ─────────────────────────────────────────────────────
+function gerarTodosBarcodes() {
+  const e   = document.getElementById('g-escola').value;
+  const f   = document.getElementById('g-forn').value;
+  const p   = document.getElementById('g-prod').value;
+  const c   = document.getElementById('g-cor').value;
+  const mes = document.getElementById('g-mes').value;
+  const a   = String(document.getElementById('g-ano').value).slice(-2).padStart(2,'0');
+  const sizes = ['01','02','04','06','08','10','12','14','16','18','20','22','24','26'];
+
+  let h = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">';
+  for (const t of sizes) {
+    const lot = makeLote(e,f,p,t,c,mes,a);
+    if (!/^\d{15}$/.test(lot)) continue;
+    const bc = gerarSVGBarcode(lot, 1.5, 50);
+    if (!bc) continue;
+    h += `<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+      <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:6px">Tam. ${TAM_MAP[t]||t} · ${lot}</div>
+      <div style="overflow:hidden">${bc.svg.replace(/width="[^"]*"/, 'width="100%"')}</div>
+    </div>`;
+  }
+  h += '</div>';
+  document.getElementById('allBcWrap').innerHTML = h;
+  document.getElementById('allBcWrap').style.display = 'block';
+}
+</script>
+
+
+<!-- =================== HISTÓRICO =================== -->
+<div id="tab-historico" class="panel">
+<div class="main">
+  <div class="card">
+    <div class="section-label">Histórico de Lotes Registrados</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">
+      Registro completo de lotes criados, com rastreabilidade de datas e contagem de etiquetas impressas.
+      Lotes são salvos ao clicar em <b style="color:var(--ok)">Registrar Lote no Histórico</b> no Gerador.
+    </p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="btn" onclick="renderHistorico()">↺ Atualizar</button>
+      <button class="btn sec" onclick="if(confirm('Apagar todo o histórico?')){HIST=[];saveHist();renderHistorico()}">🗑 Limpar histórico</button>
+    </div>
+    <div id="histTabela"><p style="color:var(--muted);font-size:13px">Carregando...</p></div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
